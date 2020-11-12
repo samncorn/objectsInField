@@ -19,6 +19,7 @@ import sys
 import argparse
 import warnings
 import pyoorb as oo
+from multiprocessing import Process
 
 from . import shared
 from . import telescope as ts
@@ -235,16 +236,42 @@ def main():
         # Creating SPICE SPK for an observatory
         b.createspk(obscode,spkstart-10,spkstart+spkndays+10)
 
-    a=ss.asteroidlist(population_model, asteroidspks, object1, nObjects)
+    t0 = time.time()
+    #a=ss.asteroidlist(population_model, asteroidspks, object1, nObjects)
+    nPerProc = np.zeros(nProc, dtype='int')
+    nPerProc += nObjects // nProc
+    if nProc > 1:
+        nPerProc[-1] -= nObjects % nProc
+
+    alist = []
+    if __name__ == 'oif.__main__':
+        for n in range(nProc):
+            firstObject = object1 + n * nPerProc[0]
+            a=ss.asteroidlist(population_model, asteroidspks, firstObject, nPerProc[n])
+            alist.append(a)
 
     if makespks=='T':
         if (glob.glob("%s" %(asteroidspks+'*.bsp')) and not args.f):
             sys.exit("Some of the SPKs might already exist. Run with -f flag to overwrite. Alternatively set Make SPKs = F in configuration file or change the value of Asteroid SPKs in the config file.")
         else:
             os.makedirs(asteroidspkpath,exist_ok=True)
-            a.generatestates(nbody,spkstart-10, spkstart+spkndays+100,spkstep, args.f)
-            del a
-            a=ss.asteroidlist(population_model,asteroidspks,object1,nObjects)    
+            #a.generatestates(nbody,spkstart-10, spkstart+spkndays+100,spkstep, args.f)
+            processes = []
+            for a in alist:
+                p = Process(target=a.generatestates, args=(nbody, spkstart-10, spkstart+spkndays+100, spkstep, args.f))
+                processes.append(p)
+                p.start()
+            for p in processes:
+                p.join()
+            del alist
+            #del a
+            #a=ss.asteroidlist(population_model,asteroidspks,object1,nObjects)    
+            alist = []
+            if __name__ == 'oif.__main__':
+                for n in range(nProc):
+                    firstObject = object1 + n * nPerProc[0]
+                    a=ss.asteroidlist(population_model, asteroidspks, firstObject, nPerProc[n])
+                    alist.append(a)
 
     # Loading camera FOV definition
     c=ts.camera(cameradef_file,spiceik)
@@ -266,9 +293,36 @@ def main():
     print("Days : ", ndays)
     print('END HEADER')
 
+    #print column names
+    head="ObjID "
+    head=head+"FieldID "
+    head=head+"FieldMJD "
+    head=head+"AstRange(km) "
+    head=head+"AstRangeRate(km/s) "
+    head=head+"AstRA(deg) "
+    head=head+"AstRARate(deg/day) "
+    head=head+"AstDec(deg) "
+    head=head+"AstDecRate(deg/day) "
+    head=head+"Ast-Sun(J2000x)(km) "
+    head=head+"Ast-Sun(J2000y)(km) "
+    head=head+"Ast-Sun(J2000z)(km) "
+    head=head+"Sun-Ast-Obs(deg) "
+    head=head+"V "
+    head=head+"V(H=0) "
+    print(head)
+
     threshold=np.radians(threshold)
-    t0 = time.time()
-    a.simulate(starttime, starttime+ndays, c, threshold, obscode)
+    #a.simulate(starttime, starttime+ndays, c, threshold, obscode, spice_mk)
+    sp.unload(spice_mk)
+    processes = []
+    if __name__=='oif.__main__':
+        for a in alist:
+            p = Process(target=a.simulate, args=(starttime, starttime+ndays, c, threshold, obscode, spice_mk))
+            processes.append(p)
+            p.start()
+        for p in processes:
+            p.join()
+
     t1 = time.time()
     print("#Simulation time: ", (t1-t0))
     #os.system('rm ckip fakesclk test.fk tmp.fk camera.ti cksetupfile tmp')

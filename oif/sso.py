@@ -646,33 +646,17 @@ class asteroidlist(asteroids):
 
 #-----------------------------------------------------------------------------------------------
 
-    def simulate(self, starttime, stoptime, camera, threshold, obscode):
+    def simulate(self, starttime, stoptime, camera, threshold, obscode, spice_mk):
         """
         """
 #        loading all SPICE kernels required for simulation
+        sp.furnsh(spice_mk)
         sp.furnsh(camera.ikfile)
         sp.furnsh(obscode+".bsp")
         sp.furnsh(camera.ckfile)
         sp.furnsh(camera.fkfile)
         sp.furnsh(camera.sclkfile)
         count=0
-
-        #Print header
-#        head="#AstID "
-        head="ObjID "
-        head=head+"FieldID "
-        head=head+"FieldMJD "
-        head=head+"AstRange(km) "
-        head=head+"AstRangeRate(km/s) "
-        head=head+"AstRA(deg) "
-        head=head+"AstRARate(deg/day) "
-        head=head+"AstDec(deg) "
-        head=head+"AstDecRate(deg/day) "
-        head=head+"Ast-Sun(J2000 x,y,z)(km) "
-        head=head+"Sun-Ast-Obs(deg) "
-        head=head+"V "
-        head=head+"V(H=0) "
-        print(head)
         
         while self.asteroids:
             i=self.asteroids[0]
@@ -683,12 +667,15 @@ class asteroidlist(asteroids):
             del self.asteroids[0]
             count=count+1
 
+        sys.stdout.flush()
+
         # Unloading all SPICE kernels required for simulation
         sp.unload(camera.ikfile)
         sp.unload(camera.ckfile)
         sp.unload(camera.fkfile)
         sp.unload(camera.sclkfile)
         sp.unload(obscode+".bsp")
+        sp.unload(spice_mk)
 
 #-----------------------------------------------------------------------------------------------
 
