@@ -348,7 +348,8 @@ class camera:
 
         count=0
 #        exec_str='SELECT obsHistID,expMJD,fieldRA,fieldDec,rotSkyPos FROM Summary order by expMJD limit %d,%d' %(line1-1,nlines)
-        exec_str='SELECT observationId,observationStartMJD,ra,dec,angle FROM ObsHistory order by observationStartMJD limit %d,%d' %(line1-1,nlines)
+#        exec_str='SELECT observationId,observationStartMJD,ra,dec,angle FROM ObsHistory order by observationStartMJD limit %d,%d' %(line1-1,nlines)
+        exec_str='SELECT observationId,observationStartMJD,FieldRA,FieldDec,rotSkyPos FROM SummaryAllProps order by observationStartMJD limit %d,%d' %(line1-1,nlines)
         for row in c.execute(exec_str):
             self.obsHistID[count] = row[0]
             self.fieldMJD[count]  = row[1]
