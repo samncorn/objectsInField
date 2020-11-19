@@ -237,7 +237,9 @@ def main():
         b.createspk(obscode,spkstart-10,spkstart+spkndays+10)
 
     t0 = time.time()
-    #a=ss.asteroidlist(population_model, asteroidspks, object1, nObjects)
+    a=ss.asteroidlist(population_model, asteroidspks, object1, nObjects)
+    nObjects=len(a.asteroids)
+    del(a)
     nPerProc = np.zeros(nProc, dtype='int')
     nPerProc += nObjects // nProc
     if nProc > 1:
