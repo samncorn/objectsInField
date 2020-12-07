@@ -234,7 +234,12 @@ def main():
         # Loading the MPC list of observatory codes and coordinates
         b=ts.telescopelist(obscodefile)
         # Creating SPICE SPK for an observatory
-        b.createspk(obscode,spkstart-10,spkstart+spkndays+10)
+        try: 
+            with open(obscode+".bsp") as obscodefile:
+                pass
+        except FileNotFoundError:
+            b.createspk(obscode,spkstart-10,spkstart+spkndays+10)
+        #b.createspk(obscode,spkstart-10,spkstart+spkndays+10)
 
     t0 = time.time()
     a=ss.asteroidlist(population_model, asteroidspks, object1, nObjects)
