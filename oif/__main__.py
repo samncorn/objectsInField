@@ -27,6 +27,9 @@ from . import sso as ss
 
 DATAPATH = os.path.join(os.path.dirname(__file__), 'data')
 USER_DATAPATH = None
+
+CWD = os.getcwd()
+
 def resolve_path(fn):
     # if absolute, return as-is
     if os.path.isabs(fn):
@@ -95,7 +98,7 @@ def main():
             'Make SPKs':         'T',
             'nDays':             '4000',
             'SPK step':          '20',
-            'nbody':             'F',
+            'nbody':             'T',
             'Object1':           '1',
             'nObjects':          '-1',
             'Make SPKs':         'T',
@@ -160,8 +163,13 @@ def main():
     Field1           = config.getint('SURVEY','Field1')
     nFields          = config.getint('SURVEY','nFields')
     spaceflag        = config.get('SURVEY','Space')
+    surveydbquery    = config.get('SURVEY','Surveydbquery')
     asteroidspks     = os.path.join(asteroidspkpath, asteroidspks)
-
+    
+    #OUTPUT section
+    outputfile       = get_or_exit(config, 'OUTPUT', 'Output file', 'Output file not provided') 
+    outputformat     = get_or_exit(config, 'OUTPUT', 'Output format', 'Output format not provided')
+    
     # resolve file locations relative to built-in data paths,
     # taking account of user overrides
     spice_mk              = resolve_path(spice_mk)
@@ -170,12 +178,14 @@ def main():
     surveydb              = resolve_path(surveydb)
     # Done reading configuration file
 
-    #If it made it this far, print header
+    #If it made it this far, print/save header
+    inputheader=['START HEADER']
+    print('START HEADER')
     with open(inputfile,'r') as f:
         for row in f:
             if(not row.startswith("#") and not row.startswith(";") and row.strip()):
                 print(row,end='')
-
+                inputheader.append(row[:-1])
     # Changing directory to data path
     os.makedirs(cachedir, exist_ok=True)
     os.chdir(cachedir)
@@ -284,7 +294,7 @@ def main():
     c=ts.camera(cameradef_file,spiceik)
 
     # Loading list of pointings from survey and creating SPICE kernels
-    c.createckfk(obscode, surveydb, starttime, Field1, nFields, spice_mk)
+    c.createckfk(obscode, surveydb, starttime, Field1, nFields, spice_mk, surveydbquery)
 
     # starttime and ndays that covers the timespan of the survey
     tmptimes=c.fieldMJD
@@ -294,11 +304,17 @@ def main():
     if (ndays<0):
         sys.exit('nFields exceeds the number of frames in the database')
 
-    print("Survey length:")
-    print("Field 1 : ", starttime)
-    print("Field n : ", endtime)
-    print("Days : ", ndays)
-    print('END HEADER')
+    surveydat=["Survey length:","Field 1 : "+str(starttime),
+               "Field n : "+str(endtime), "Days : "+str(ndays),"END HEADER"]    
+    for s in surveydat:
+        inputheader.append(s)
+        print(s)
+        
+#     print("Survey length:")
+#     print("Field 1 : ", starttime)
+#     print("Field n : ", endtime)
+#     print("Days : ", ndays)
+#     print('END HEADER')
 
     #print column names
     head="ObjID "
