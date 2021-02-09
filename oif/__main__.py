@@ -342,10 +342,17 @@ def main():
     sp.unload(spice_mk)
     processes = []
     if __name__=='oif.__main__':
+        if nProc==1:
+            suffix=['']
+        else:
+            suffix=['_'+str(i).zfill(4) for i in range(nProc)]
+        count=0
         for a in alist:
-            p = Process(target=a.simulate, args=(starttime, starttime+ndays, c, threshold, obscode, spice_mk))
+            suff=suffix[count]
+            p = Process(target=a.simulate, args=(starttime, starttime+ndays, c, threshold, obscode, CWD, spice_mk, outputfile+suff, outputformat))
             processes.append(p)
             p.start()
+            count+=1
         for p in processes:
             p.join()
 
