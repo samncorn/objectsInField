@@ -743,12 +743,8 @@ class asteroidlist(asteroids):
 
 #-----------------------------------------------------------------------------------------------
 
-<<<<<<< HEAD
-    def simulate(self, starttime, stoptime, camera, threshold, obscode, spice_mk):
-=======
-    def simulate(self, starttime, stoptime, camera, threshold, obscode, CWD, outputfile='stdout', outputfmt='',
+    def simulate(self, starttime, stoptime, camera, threshold, obscode, CWD, spice_mk, outputfile='stdout', outputfmt='',
                  inputheader=''):
->>>>>>> 787d62d7a2a01b77c4e0a719b5c06f45645aae49
         """
             CWD: string
                 current working directory
@@ -768,8 +764,6 @@ class asteroidlist(asteroids):
         sp.furnsh(camera.sclkfile)
         
         count=0
-<<<<<<< HEAD
-=======
 
         #Print column headers to stdout
         if(outputfile=='stdout'):
@@ -807,9 +801,30 @@ class asteroidlist(asteroids):
 #         head=head+"V(H=0) "
 #         print(head)
         
-        results=[]
-        results_ext=results.extend
->>>>>>> 787d62d7a2a01b77c4e0a719b5c06f45645aae49
+        #results=[]
+        #results_ext=results.extend
+        if(outputfile!='stdout'):
+            outfn=CWD+'/'+outputfile
+            with open(outfn+'.hdr', 'w') as filehandle:
+                for listitem in inputheader:
+                    filehandle.write('%s\n' % listitem)
+
+            if(outputfmt=='csv'):
+                if(os.path.isfile(outfn+'.csv')==True):
+                    os.remove(outfn+'.csv')
+                else:
+                    pass
+            elif(outputfmt=='hdf5' or outputfmt=='HDF5' or outputfmt=='h5'):
+                if(os.path.isfile(CWD+'/'+outputfile+'.h5')==True):
+                    os.remove(CWD+'/'+outputfile+'.h5')
+                else:
+                    pass
+            else:
+                print('Output file format not recognized. Defaulting to csv')
+                os.remove(outfn+'.csv')
+        else:
+            pass
+            
         
         while self.asteroids:
             i=self.asteroids[0]
@@ -822,37 +837,53 @@ class asteroidlist(asteroids):
        
                 if res:
                     #print(res)
-                    results_ext(res)
+                    #results_ext(res)
+                    cols=[i.strip(', ') for i in output_header]
+                    df=pd.DataFrame(res,columns=cols)
+                    if(outputfmt=='csv'):
+                        if(os.path.isfile(outfn+'.csv')==True):
+                            df.to_csv(outfn+'.csv','a',index=False)
+                        else:
+                            df.to_csv(outfn+'.csv',index=False)
+                    elif(outputfmt=='hdf5' or outputfmt=='HDF5' or outputfmt=='h5'):
+                        if(os.path.isfile(CWD+'/'+outputfile+'.h5')==True):
+                            df.to_hdf(CWD+'/'+outputfile+'.h5',key='data',
+                                      complevel=3, complib='zlib',index=False,
+                                      mode='a',append=True,format='table')
+                        else:
+                            df.to_hdf(CWD+'/'+outputfile+'.h5',key='data',
+                                      complevel=3, complib='zlib',index=False,
+                                      format='table')
+                    else:
+                        #print('Output file format not recognized. Defaulting to csv')
+                        df.to_csv(outfn+'.csv',index=False) 
+
             del i
             del self.asteroids[0]
             count=count+1
 
-<<<<<<< HEAD
-        sys.stdout.flush()
-=======
         #print(np.array(results_ext))
-        if(outputfile!='stdout'):
-            cols=[i.strip(', ') for i in output_header]
+        #if(outputfile!='stdout'):
+            #cols=[i.strip(', ') for i in output_header]
             #print(cols)
             #print(results_ext)
-            df=pd.DataFrame(results,columns=cols)
+            #df=pd.DataFrame(results,columns=cols)
             #df=pd.DataFrame(results)
             #CREATE HEADER FILE FOR OUTPUT
-            outfn=CWD+'/'+outputfile
-            with open(outfn+'.hdr', 'w') as filehandle:
-                for listitem in inputheader:
-                    filehandle.write('%s\n' % listitem)
+            #outfn=CWD+'/'+outputfile
+            #with open(outfn+'.hdr', 'w') as filehandle:
+            #    for listitem in inputheader:
+            #        filehandle.write('%s\n' % listitem)
                     
-            if(outputfmt=='csv'):
-                df.to_csv(outfn+'.csv',index=False)
-            elif(outputfmt=='hdf5' or outputfmt =='HDF5' or outputfmt == 'h5'):
-                df.to_hdf(CWD+'/'+outputfile+'.h5',key='data',
-                          complevel=3, complib='zlib',index=False)
-            else:
-                print('Output file format not recognized. Defaulting to csv')
-                df.to_csv(outfn+'.csv',index=False)    
+            #if(outputfmt=='csv'):
+            #    df.to_csv(outfn+'.csv',index=False)
+            #elif(outputfmt=='hdf5' or outputfmt =='HDF5' or outputfmt == 'h5'):
+            #    df.to_hdf(CWD+'/'+outputfile+'.h5',key='data',
+            #              complevel=3, complib='zlib',index=False)
+            #else:
+            #    print('Output file format not recognized. Defaulting to csv')
+            #    df.to_csv(outfn+'.csv',index=False)    
         # print(CWD)
->>>>>>> 787d62d7a2a01b77c4e0a719b5c06f45645aae49
 
         # Unloading all SPICE kernels required for simulation
         sp.unload(camera.ikfile)
